@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Plan price {{ variant }} — Product Cost Management{% endblock %}
+{% block content %}
+
+<!-- Header-Bereich mit dynamischem Filter-Titel -->
+<div class="mb-8">
+    <div class="flex items-center space-x-3">
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Planpreis-Übersicht (Variante {{ variant }})</h1>
+        <span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
+            {{ 'Materialien ohne 11.5*' if variant == 1 else 'Nur 11.5* Materialien' }}
+        </span>
+    </div>
+    <p class="mt-2 text-sm text-slate-500 font-medium">
+        📋 {{ rows|length }} gruppierte Datensätze geladen
+    </p>
+</div>
+
+<!-- Spalten-Definition -->
+{% set cols = ['Material','Materialkurztext','Werk','Dispositionselement',
+               'SummevonSummevonZugang_Bedarf','Lieferant','VERPR','VERPR_vm',
+               'ZPLP1','ZPLP2','ZPLP3','STPRS','Diff','Status'] %}
+
+<!-- Modernes Daten-Grid -->
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-slate-800 text-white font-semibold">
+                    {% for c in cols %}
+                    <th class="px-4 py-3 whitespace-nowrap {{ 'text-right' if c in ('SummevonSummevonZugang_Bedarf','VERPR','VERPR_vm','ZPLP1','ZPLP2','ZPLP3','STPRS','Diff') }}">
+                        {{ labels.get(c, c) }}
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for r in rows %}
+                <tr class="hover:bg-slate-50/80 transition-colors {{ 'bg-blue-50/30' if r['Status']|string == '1' }}">
+                    {% for c in cols %}
+                        {% if c in ('SummevonSummevonZugang_Bedarf','VERPR','VERPR_vm','ZPLP1','ZPLP2','ZPLP3','STPRS','Diff') %}
+                            <!-- Numerische Spalten rechtsbündig und in Festbreitenschrift -->
+                            <td class="px-4 py-3 font-mono text-right text-slate-700 whitespace-nowrap">
+                                {{ '%.4f'|format(r[c]) if r[c] is not none else '' }}
+                            </td>
+                        {% else %}
+                            <!-- Text-Spalten -->
+                            <td class="px-4 py-3 text-slate-600 whitespace-nowrap {% if c == 'Material' %}font-mono font-medium text-slate-900{% endif %}">
+                                {{ r[c] if r[c] is not none else '' }}
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

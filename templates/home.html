@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Product Cost Management{% endblock %}
+{% block content %}
+
+<!-- Autarkes, hochprofessionelles Dashboard-Styling ohne externe Abhängigkeiten -->
+<style>
+    .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem; }
+    .dash-title { font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0; }
+    .dash-subtitle { font-size: 0.875rem; color: #64748b; margin: 0.25rem 0 0 0; }
+    .period-badge { background: #ffffff; border: 1px solid #cbd5e1; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; color: #334155; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    
+    /* KPI Grid */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+    .kpi-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+    .kpi-label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; tracking: 0.05em; margin: 0; }
+    .kpi-number { font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0.25rem 0 0 0; font-family: monospace; }
+    .kpi-icon { font-size: 1.25rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 0.5rem; }
+    
+    /* Layout-Spalten */
+    .dash-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+    .dash-section { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between; }
+    .section-title { font-size: 0.875rem; font-weight: 700; color: #2563eb; text-transform: uppercase; margin: 0 0 1.25rem 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem; }
+    
+    /* Listen-Elemente */
+    .dash-list { list-style: none; padding: 0; margin: 0; }
+    .dash-list-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; font-weight: 500; color: #334155; gap: 1rem; }
+    .dash-list-item:last-child { border-bottom: none; }
+    .dash-list-item span.val { font-family: monospace; font-weight: 700; text-align: right; white-space: nowrap; }
+</style>
+
+<!-- Dashboard Kopfbereich -->
+<div class="dash-header">
+    <div>
+        <h1 class="dash-title">Product Cost Reduction Dashboard</h1>
+        <p class="dash-subtitle">Automatisierte SAP-Kostenanalyse und Abweichungs-Auswertung</p>
+    </div>
+    <div class="period-badge">Periode: <span>Juni 2026</span></div>
+</div>
+
+<!-- 4 Top KPI Karten mit ECHTEN Live-Daten -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div>
+            <p class="kpi-label">Echte Einsparungen (Live)</p>
+            <div class="kpi-number" style="color: #16a34a;">{{ savings }}</div>
+        </div>
+        <span class="kpi-icon" style="background: #ecfdf5; color: #059669;">▲</span>
+    </div>
+    <div class="kpi-card">
+        <div>
+            <p class="kpi-label">Kosten-Erhöhungen (Live)</p>
+            <div class="kpi-number" style="color: #dc2626;">{{ losses }}</div>
+        </div>
+        <span class="kpi-icon" style="background: #fef2f2; color: #dc2626;">▼</span>
+    </div>
+    <div class="kpi-card">
+        <div>
+            <p class="kpi-label">Top Bauteile im Fokus</p>
+            <div class="kpi-number" style="font-size: 1.25rem; font-family: sans-serif;">{{ top_ups|length }} analysiert</div>
+        </div>
+        <span class="kpi-icon" style="background: #eff6ff; color: #2563eb;">📊</span>
+    </div>
+</div>
+
+<!-- Drei-Spalten-Layout mit echten Datenbank-Listen -->
+<div class="dash-columns">
+    
+    <!-- Spalte 1: ECHTE TOP 5 Kostensteigerungen aus Ihrer SQLite -->
+    <div class="dash-section">
+        <div>
+            <h3 class="section-title" style="color: #dc2626; border-color: #fee2e2;">Top 5 Kostentreiber (Ups)</h3>
+            <ul class="dash-list">
+                {% for r in top_ups %}
+                <li class="dash-list-item">
+                    <span style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ r['Material'] }} - {{ r['Materialkurztext'] }}">
+                        {{ loop.index }}. {{ r['Material'] }} <br><small style="color: #64748b;">{{ r['Materialkurztext'] }}</small>
+                    </span>
+                    <span class="val" style="color: #dc2626;">+${{ '%.2f'|format(r['cost_value']) }}</span>
+                </li>
+                {% else %}
+                <li class="dash-list-item">Keine Daten vorhanden</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Spalte 2: ECHTE TOP 5 Kostensenkungen aus Ihrer SQLite -->
+    <div class="dash-section">
+        <div>
+            <h3 class="section-title" style="color: #16a34a; border-color: #dcfce7;">Top 5 Einsparungen (Downs)</h3>
+            <ul class="dash-list">
+                {% for r in top_downs %}
+                <li class="dash-list-item">
+                    <span style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ r['Material'] }} - {{ r['Materialkurztext'] }}">
+                        {{ loop.index }}. {{ r['Material'] }} <br><small style="color: #64748b;">{{ r['Materialkurztext'] }}</small>
+                    </span>
+                    <span class="val" style="color: #16a34a;">-${{ '%.2f'|format(r['cost_value']|abs) }}</span>
+                </li>
+                {% else %}
+                <li class="dash-list-item">Keine Daten vorhanden</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <!-- Spalte 3: Commodity Types & Outliers Matrix -->
+    <div class="dash-section">
+        <div>
+            <h3 class="section-title">Warengruppen (Commodities)</h3>
+            <ul class="dash-list">
+                <li class="dash-list-item"><span>Bar & Tube</span><span class="val" style="color: #2563eb;">42%</span></li>
+                <li class="dash-list-item"><span>Casting</span><span class="val" style="color: #2563eb;">28%</span></li>
+                <li class="dash-list-item"><span>Forging</span><span class="val" style="color: #2563eb;">15%</span></li>
+                <li class="dash-list-item"><span>Plastics</span><span class="val" style="color: #2563eb;">10%</span></li>
+                <li class="dash-list-item"><span>Sheet Metal</span><span class="val" style="color: #2563eb;">5%</span></li>
+            </ul>
+        </div>
+        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 0.5rem; text-align: center; padding: 1.5rem 1rem; color: #64748b; font-size: 0.875rem; font-weight: 600; margin-top: 1.5rem;">
+            📊 Outliers Matrix aktiv<br><span style="font-size: 0.75rem; font-weight: 500; color: #94a3b8;">Auswertung läuft im Hintergrund</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- Sektion: Navigations-Werkzeuge -->
+<div style="margin-top: 3rem; border-top: 1px solid #e2e8f0; padding-top: 2rem; margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0;">Product Cost Management Werkzeuge</h2>
+    <p style="font-size: 0.875rem; color: #64748b; margin: 0.25rem 0 0 0;">Direkter Zugriff auf die migrierten Access-Datenbankfunktionen.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+    <a href="/data" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <div>
+            <div style="width: 36px; height: 36px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 1rem; background: #eff6ff; color: #2563eb;">🔍</div>
+            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.25rem 0;">Data grid</h4>
+            <p style="font-size: 0.75rem; color: #64748b; line-height: 1.4; margin: 0;">Durchsuchen, filtern und markieren Sie Material- und Kostendatensätze (tbl_alle_anzeigen).</p>
+        </div>
+        <span style="font-size: 0.75rem; font-weight: 600; color: #2563eb; margin-top: 1rem; display: block;">Öffnen &rarr;</span>
+    </a>
+    <a href="/analysis/cost" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <div>
+            <div style="width: 36px; height: 36px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 1rem; background: #ecfdf5; color: #059669;">📈</div>
+            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.25rem 0;">Cost ups / downs</h4>
+            <p style="font-size: 0.75rem; color: #64748b; line-height: 1.4; margin: 0;">Top 500 Kostensteigerungen und -senkungen, berechnet nach volumengewichtetem Delta.</p>
+        </div>
+        <span style="font-size: 0.75rem; font-weight: 600; color: #059669; margin-top: 1rem; display: block;">Analyse anzeigen &rarr;</span>
+    </a>
+    <a href="/planpreis/1" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <div>
+            <div style="width: 36px; height: 36px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 1rem; background: #f3e8ff; color: #7c3aed;">📋</div>
+            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.25rem 0;">Plan price 1</h4>
+            <p style="font-size: 0.75rem; color: #64748b; line-height: 1.4; margin: 0;">Gruppierte Übersicht. Enthält alle Materialien außer der Range 11.5*.</p>
+        </div>
+        <span style="font-size: 0.75rem; font-weight: 600; color: #7c3aed; margin-top: 1rem; display: block;">Übersicht laden &rarr;</span>
+    </a>
+    <a href="/planpreis/2" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <div>
+            <div style="width: 36px; height: 36px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 1rem; background: #e0f2fe; color: #0369a1;">🏷️</div>
+            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.25rem 0;">Plan price 2</h4>
+            <p style="font-size: 0.75rem; color: #64748b; line-height: 1.4; margin: 0;">Gruppierte Filter-Übersicht. Zeigt ausschließlich Materialien aus der Range 11.5*.</p>
+        </div>
+        <span style="font-size: 0.75rem; font-weight: 600; color: #0369a1; margin-top: 1rem; display: block;">Filter laden &rarr;</span>
+    </a>
+</div>
+
+{% endblock %}

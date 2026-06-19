@@ -1,0 +1,10 @@
+<h2>Material {{ row['Material'] }}</h2>
+<table class="detail">
+    <tbody>
+    {% for safe, label in labels.items() %}
+        {% if safe in row %}
+        <tr><th>{{ label }}</th><td>{{ row[safe] if row[safe] is not none else '' }}</td></tr>
+        {% endif %}
+    {% endfor %}
+    </tbody>
+</table>

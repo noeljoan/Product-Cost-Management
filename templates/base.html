@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Product Cost Management{% endblock %}</title>
+    <style>
+        /* Modernes, autarkes CSS-Framework integriert */
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+        nav { background: #ffffff; border-b: 1px solid #e2e8f0; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); sticky: top; z-index: 50; }
+        nav a.brand { font-size: 1.25rem; font-weight: 700; color: #0f172a; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        nav .links { display: flex; gap: 1rem; }
+        nav .links a { font-size: 0.875rem; font-weight: 500; color: #64748b; text-decoration: none; padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: all 0.2s; }
+        nav .links a:hover { color: #2563eb; background: #f1f5f9; }
+        main { flex-grow: 1; max-width: 1280px; width: 100%; mx: auto; margin: 2rem auto; padding: 0 2rem; box-sizing: border-box; }
+        footer { background: #ffffff; border-t: 1px solid #e2e8f0; text-align: center; padding: 1rem; font-size: 0.75rem; color: #94a3b8; }
+        
+        /* Dashboard-Grid & Karten */
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; color: inherit; }
+        .card:hover { border-color: #2563eb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .kpi-num { font-size: 1.75rem; font-weight: 700; color: #0f172a; margin: 0.25rem 0 0 0; }
+        .uppercase-title { font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; tracking: 0.05em; margin: 0; }
+        
+        /* Tabellen-Styling für /data */
+        .table-container { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-top: 1rem; }
+        .scroll-x { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+        th { background: #1e293b; color: #ffffff; padding: 0.75rem 1rem; font-weight: 600; white-space: nowrap; }
+        th a { color: #ffffff; text-decoration: none; }
+        td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; white-space: nowrap; }
+        tr:hover { background: #f8fafc; }
+        .font-mono { font-family: monospace; }
+        .text-right { text-align: right; }
+    </style>
+</head>
+<body>
+
+    <!-- Globale Navigationsleiste -->
+    <nav>
+        <a href="/" class="brand">📊 Product Cost Management</a>
+        <div class="links">
+            <a href="/data">📋 Daten-Grid</a>
+            <a href="/analysis/cost">📈 Kosten-Analyse</a>
+            <a href="/logout" style="color: #dc2626;">🚪 Abmelden</a>
+        </div>
+    </nav>
+
+    <!-- Inhalt der jeweiligen Seite -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        &copy; 2026 Product Cost Management | Autarkes Web-Dashboard (Python & FastAPI)
+    </footer>
+
+</body>
+</html>

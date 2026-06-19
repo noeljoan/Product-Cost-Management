@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Data — Product Cost Management{% endblock %}
+{% block content %}
+
+<!-- Lokales, blockierungsfreies Design für die Kennzahlen und Filter -->
+<style>
+    .kpi-container { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; justify-content: space-between; background: #ffffff; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; }
+    .kpi-box { background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid #f1f5f9; min-width: 180px; }
+    .kpi-val { font-size: 1.5rem; font-weight: 700; color: #2563eb; margin-top: 0.25rem; }
+    .btn-reset { padding: 0.6rem 1rem; background: #fff5f5; color: #e11d48; border: 1px solid #fee2e2; border-radius: 0.5rem; font-weight: 600; cursor: pointer; font-size: 0.875rem; }
+    .btn-reset:hover { background: #fee2e2; }
+    
+    .filter-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem; }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: end; }
+    .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .filter-group label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
+    .filter-group input, .filter-group select { border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.5rem; font-size: 0.875rem; background: #f8fafc; outline: none; box-sizing: border-box; width: 100%; }
+    .filter-group input:focus { border-color: #2563eb; background: #fff; }
+    
+    .btn-submit { padding: 0.5rem 1rem; background: #2563eb; color: #fff; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer; font-size: 0.875rem; height: 38px; width: 100%; }
+    .btn-clear { padding: 0.5rem 1rem; background: #f1f5f9; color: #475569; border: none; border-radius: 0.5rem; font-weight: 600; text-decoration: none; font-size: 0.875rem; display: inline-block; text-align: center; height: 38px; line-height: 24px; width: 100%; box-sizing: border-box; }
+</style>
+
+<!-- KPI Cockpit -->
+<div class="kpi-container" id="totals" data-count="{{ totals.count }}" data-avg="{{ totals.avg_cost }}" data-weighted="{{ totals.weighted_cost }}">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div class="kpi-box">
+            <p class="uppercase-title">Markierte Zeilen</p>
+            <div class="kpi-val" id="t-count">{{ totals.count }}</div>
+        </div>
+        <div class="kpi-box">
+            <p class="uppercase-title">Durchschnitt VERPR</p>
+            <div class="kpi-val" style="color: #0f172a;" id="t-avg">{{ '%.4f'|format(totals.avg_cost) }}</div>
+        </div>
+        <div class="kpi-box">
+            <p class="uppercase-title">Gewichtete Kosten</p>
+            <div class="kpi-val" style="color: #0f172a;" id="t-weighted">{{ '%.2f'|format(totals.weighted_cost) }}</div>
+        </div>
+    </div>
+    <button type="button" class="btn-reset" onclick="resetStatus()">Alle zurücksetzen</button>
+</div>
+<!-- Filter-Leiste -->
+<div class="filter-card">
+    <form class="filter-grid" method="get" action="/data">
+        <div class="filter-group">
+            <label>Material</label>
+            <input type="text" name="material" placeholder="z.B. 11.5*" value="{{ filters.material }}">
+        </div>
+        <div class="filter-group">
+            <label>Werk</label>
+            <input type="text" name="werk" placeholder="Werk eingeben" value="{{ filters.werk }}">
+        </div>
+        <div class="filter-group">
+            <label>Lieferant</label>
+            <input type="text" name="lieferant" placeholder="Lieferantennummer" value="{{ filters.lieferant }}">
+        </div>
+        <div class="filter-group">
+            <label>Datentyp</label>
+            <input type="text" name="datentyp" placeholder="Datentyp" value="{{ filters.datentyp }}">
+        </div>
+        <div class="filter-group">
+            <label>Filter-Status</label>
+            <select name="status">
+                <option value="" {{ 'selected' if filters.status == '' }}>Alle Datensätze</option>
+                <option value="1" {{ 'selected' if filters.status == '1' }}>Markiert (1)</option>
+                <option value="0" {{ 'selected' if filters.status == '0' }}>Nicht markiert (0)</option>
+            </select>
+        </div>
+        
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <input type="hidden" name="direction" value="{{ direction }}">
+        
+        <div style="display: flex; gap: 0.5rem; width: 100%;">
+            <div style="flex: 1;"><button type="submit" class="btn-submit">Filtern</button></div>
+            <div style="flex: 1;"><a class="btn-clear" href="/data">Leeren</a></div>
+        </div>
+    </form>
+</div>
+
+<p style="font-size: 0.875rem; color: #64748b; font-weight: 500; margin-bottom: 1rem;">
+    📊 {{ total }} Zeilen gefunden {% if total > rows|length %} (Zeige Seite {{ page }} von {{ pages }}){% endif %}
+</p>
+
+<!-- Tabellen-Gitter -->
+<div class="table-container">
+    <div class="scroll-x">
+        <table>
+            <thead>
+                <tr>
+                    <th style="text-align: center; width: 50px;">Status</th>
+                    {% for col in grid_columns %}
+                    <th>
+                        {% set new_dir = 'desc' if (sort == col and direction == 'asc') else 'asc' %}
+                        <a href="/data?material={{ filters.material }}&werk={{ filters.werk }}&lieferant={{ filters.lieferant }}&datentyp={{ filters.datentyp }}&status={{ filters.status }}&sort={{ col }}&direction={{ new_dir }}">
+                            {{ labels.get(col, col) }}{% if sort == col %} {{ '▲' if direction == 'asc' else '▼' }}{% endif %}
+                        </a>
+                    </th>
+                    {% endfor %}
+                    <th style="text-align: center; width: 80px;">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                {% set marked = (row['Status']|string) == '1' %}
+                <tr data-rowid="{{ row['_rowid'] }}" style="{% if marked %}background: #eff6ff;{% endif %}">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="mark" {{ 'checked' if marked }} onchange="toggleStatus({{ row['_rowid'] }}, this)" style="cursor: pointer; width: 16px; height: 16px;">
+                    </td>
+                    {% for col in grid_columns %}
+                    {% if col == 'VERPR' %}
+                        {% set plan = row['ZPLP1'] %}
+                        {% set is_warn = (plan is not none and row['VERPR'] is not none and plan > row['VERPR']) %}
+                        <td class="font-mono text-right" style="{% if is_warn %}background: #fffbeb; color: #b45309; font-weight: 600; border-radius: 4px;{% endif %}">
+                            {{ '%.4f'|format(row['VERPR']) if row['VERPR'] is not none else '' }}
+                        </td>
+                    {% elif col in ('SummevonZugang_Bedarf','VERPR_vm','Diff') %}
+                        <td class="font-mono text-right">{{ '%.4f'|format(row[col]) if row[col] is not none else '' }}</td>
+                    {% else %}
+                        <td>{{ row[col] if row[col] is not none else '' }}</td>
+                    {% endif %}
+                    {% endfor %}
+                    <td style="text-align: center;">
+                        <button onclick="showDetail({{ row['_rowid'] }}); return false;" style="font-size: 0.75rem; font-weight: 600; color: #2563eb; background: #eff6ff; border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem; cursor: pointer;">Ansicht</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- Seitennummerierung -->
+{% if pages > 1 %}
+<div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; font-size: 0.875rem;">
+    {% set base = '/data?material=' ~ filters.material ~ '&werk=' ~ filters.werk ~ '&lieferant=' ~ filters.lieferant ~ '&datentyp=' ~ filters.datentyp ~ '&status=' ~ filters.status ~ '&sort=' ~ sort ~ '&direction=' ~ direction %}
+    {% if page > 1 %}
+        <a href="{{ base }}&page={{ page - 1 }}" style="padding: 0.5rem 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; color: #334155; text-decoration: none; font-weight: 600;">&larr; Zurück</a>
+    {% endif %}
+    <span style="color: #64748b; font-weight: 500;">Seite {{ page }} von {{ pages }}</span>
+    {% if page < pages %}
+        <a href="{{ base }}&page={{ page + 1 }}" style="padding: 0.5rem 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; color: #334155; text-decoration: none; font-weight: 600;">Weiter &rarr;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Detail-Modal-Overlay -->
+<div id="detail-overlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 100;" class="hidden" onclick="hideDetail()">
+    <div id="detail-box" style="background: white; border-radius: 1rem; max-width: 600px; width: 100%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);" onclick="event.stopPropagation()">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #f8fafc; border-b: 1px solid #e2e8f0;">
+            <h3 style="margin: 0; font-size: 1.125rem; font-weight: 700;">Material-Detailansicht</h3>
+            <button onclick="hideDetail()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8;">&times;</button>
+        </div>
+        <div id="detail-content" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;"></div>
+    </div>
+</div>
+
+<script>
+function toggleStatus(rowid, checkbox) {
+    const value = checkbox.checked ? 1 : 0;
+    const formData = new FormData();
+    formData.append("value", value);
+
+    fetch(`/data/${rowid}/status`, { method: "POST", body: formData })
+    .then(response => response.json())
+    .then(data => {
+        const tr = document.querySelector(`tr[data-rowid="${rowid}"]`);
+        if (value) { tr.style.background = "#eff6ff"; } 
+        else { tr.style.background = ""; }
+        updateTotals(data.totals);
+    });
+}
+
+function resetStatus() {
+    if (confirm("Möchten Sie alle Markierungen wirklich zurücksetzen?")) {
+        fetch("/data/status/reset", { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            document.querySelectorAll("table tbody tr").forEach(tr => tr.style.background = "");
+            document.querySelectorAll("input.mark").forEach(cb => cb.checked = false);
+            updateTotals(data.totals);
+        });
+    }
+}
+
+function showDetail(rowid) {
+    const overlay = document.getElementById("detail-overlay");
+    const content = document.getElementById("detail-content");
+    content.innerHTML = '<div style="text-align: center; color: #94a3b8;">Lade Daten...</div>';
+    overlay.style.display = "flex";
+
+    fetch(`/data/${rowid}/detail`)
+    .then(response => response.text())
+    .then(html => { content.innerHTML = html; });
+}
+
+function hideDetail() { document.getElementById("detail-overlay").style.display = "none"; }
+function updateTotals(totals) {
+    document.getElementById("t-count").innerText = totals.count;
+    document.getElementById("t-avg").innerText = parseFloat(totals.avg_cost).toFixed(4);
+    document.getElementById("t-weighted").innerText = parseFloat(totals.weighted_cost).toFixed(2);
+}
+
+// Initiale Ausblendung des Overlays sichern
+document.getElementById("detail-overlay").style.display = "none";
+document.addEventListener("keydown", function(e) { if (e.key === "Escape") hideDetail(); });
+</script>
+{% endblock %}

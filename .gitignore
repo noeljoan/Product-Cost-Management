@@ -1,0 +1,17 @@
+# Python Cache blockieren
+__pycache__/
+*.pyc
+app/__pycache__/
+
+# Lokale virtuelle Umgebung ignorieren
+venv/
+.venv/
+
+# Echte Datenbank NICHT auf GitHub hochladen (Sicherheit & Größe)
+*.sqlite
+*.accdb
+*.mdb
+
+# Betriebssystem-Dateien
+.DS_Store
+Thumbs.db

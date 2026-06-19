@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Cost ups / downs — Product Cost Management{% endblock %}
+{% block content %}
+
+<!-- Header-Bereich mit Titel und Download-Button -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <div>
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Kostenentwicklung (Top {{ ups|length }})</h1>
+        <p class="mt-1 text-sm text-slate-500">Volumengewichtete Gewinner und Verlierer der Produktkosten.</p>
+    </div>
+    <a class="inline-flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition" href="/export/cost.xlsx">
+        <span>⬇</span> <span>Excel-Report herunterladen</span>
+    </a>
+</div>
+
+<!-- Modernes Tab-System -->
+<div class="border-b border-slate-200 mb-6">
+    <nav class="flex space-x-4" aria-label="Tabs">
+        <button id="btn-tab-ups" class="px-4 py-2.5 font-semibold text-sm border-b-2 border-emerald-500 text-emerald-600 transition" onclick="showTab('ups', this)">
+            📈 Cost ups ({{ ups|length }})
+        </button>
+        <button id="btn-tab-downs" class="px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition" onclick="showTab('downs', this)">
+            📉 Cost downs ({{ downs|length }})
+        </button>
+    </nav>
+</div>
+
+<!-- Tabellen-Makro für wiederverwendbare Tabellen-Strukturen -->
+{% macro cost_table(rows, value_label, is_up) %}
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-slate-800 text-white font-semibold">
+                    <th class="px-4 py-3 whitespace-nowrap">Material</th>
+                    <th class="px-4 py-3 whitespace-nowrap">Kurztext</th>
+                    <th class="px-4 py-3 whitespace-nowrap">Werk</th>
+                    <th class="px-4 py-3 text-right whitespace-nowrap">Σ Zugang/Bedarf</th>
+                    <th class="px-4 py-3 text-right whitespace-nowrap">VERPR</th>
+                    <th class="px-4 py-3 text-right whitespace-nowrap">VERPR_vm</th>
+                    <th class="px-4 py-3 text-right whitespace-nowrap">{{ value_label }}</th>
+                    <th class="px-4 py-3 text-right whitespace-nowrap">%</th>
+                    <th class="px-4 py-3 text-right whitespace-nowrap">Δ part</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for r in rows %}
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="px-4 py-3 font-mono font-medium text-slate-900 whitespace-nowrap">{{ r['Material'] }}</td>
+                    <td class="px-4 py-3 text-slate-700 whitespace-nowrap max-w-xs truncate" title="{{ r['Materialkurztext'] }}">{{ r['Materialkurztext'] }}</td>
+                    <td class="px-4 py-3 text-slate-600 whitespace-nowrap">{{ r['Werk'] }}</td>
+                    <td class="px-4 py-3 font-mono text-right text-slate-600 whitespace-nowrap">{{ '%.2f'|format(r['SummevonSummevonZugang_Bedarf']) if r['SummevonSummevonZugang_Bedarf'] is not none else '' }}</td>
+                    <td class="px-4 py-3 font-mono text-right text-slate-600 whitespace-nowrap">{{ '%.4f'|format(r['VERPR']) if r['VERPR'] is not none else '' }}</td>
+                    <td class="px-4 py-3 font-mono text-right text-slate-600 whitespace-nowrap">{{ '%.4f'|format(r['VERPR_vm']) if r['VERPR_vm'] is not none else '' }}</td>
+                    
+                    <!-- Farbliche Highlight-Spalte basierend auf Up/Down -->
+                    <td class="px-4 py-3 font-mono text-right font-bold whitespace-nowrap {{ 'text-emerald-700 bg-emerald-50/40' if is_up else 'text-rose-700 bg-rose-50/40' }}">
+                        {{ '%.2f'|format(r['cost_value']) if r['cost_value'] is not none else '' }}
+                    </td>
+                    
+                    <td class="px-4 py-3 font-mono text-right font-semibold whitespace-nowrap {{ 'text-emerald-600' if is_up else 'text-rose-600' }}">
+                        {{ '%.2f%%'|format(r['cost_pct'] * 100) if r['cost_pct'] is not none else '' }}
+                    </td>
+                    <td class="px-4 py-3 font-mono text-right text-slate-600 whitespace-nowrap">{{ '%.4f'|format(r['cost_part']) if r['cost_part'] is not none else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Inhaltsbereiche der Tabs -->
+<div id="tab-ups" class="space-y-4">
+    <div class="flex items-center space-x-2 text-emerald-800 bg-emerald-50 border border-emerald-100 p-3 rounded-lg text-sm font-medium">
+        <span>📈</span> <span>Anzeige der stärksten Kostensteigerungen nach gewichtetem Delta.</span>
+    </div>
+    {{ cost_table(ups, 'Cost up (+)', is_up=True) }}
+</div>
+
+<div id="tab-downs" class="space-y-4 hidden">
+    <div class="flex items-center space-x-2 text-rose-800 bg-rose-50 border border-rose-100 p-3 rounded-lg text-sm font-medium">
+        <span>📉</span> <span>Anzeige der stärksten Kostensenkungen nach gewichtetem Delta.</span>
+    </div>
+    {{ cost_table(downs, 'Cost down (-)', is_up=False) }}
+</div>
+
+<!-- JavaScript zur Steuerung der Tabs mit Tailwind-Klassen -->
+<script>
+function showTab(tabName, clickedButton) {
+    // 1. Alle Tabpanes verstecken
+    document.getElementById('tab-ups').classList.add('hidden');
+    document.getElementById('tab-downs').classList.add('hidden');
+    
+    // 2. Das gewählte Tabpane anzeigen
+    document.getElementById('tab-' + tabName).classList.remove('hidden');
+    
+    // 3. Alle Navigations-Buttons zurücksetzen (Farbe & Rahmen)
+    const buttons = clickedButton.parentNode.querySelectorAll('button');
+    buttons.forEach(btn => {
+        btn.className = "px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition";
+    });
+    
+    // 4. Den aktiven Button farblich hervorheben
+    if (tabName === 'ups') {
+        clickedButton.className = "px-4 py-2.5 font-semibold text-sm border-b-2 border-emerald-500 text-emerald-600 transition";
+    } else {
+        clickedButton.className = "px-4 py-2.5 font-semibold text-sm border-b-2 border-rose-500 text-rose-600 transition";
+    }
+}
+</script>
+
+{% endblock %}

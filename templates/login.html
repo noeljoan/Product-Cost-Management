@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Anmeldung — Cost Management{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; padding: 3rem 0; font-family: sans-serif;">
+    <div style="background: #ffffff; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; max-width: 400px; w-full: 100%; text-align: center;">
+        
+        <div style="margin-bottom: 1.5rem;">
+            <span style="font-size: 2.5rem;">🔐</span>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0.5rem 0 0 0;">System-Anmeldung</h2>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem;">Bitte anmelden, um auf die Kosten-Daten zuzugreifen.</p>
+        </div>
+
+        {% if error %}
+        <div style="background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem; font-weight: 500;">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/login" method="post" style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 0.25rem;">Benutzername</label>
+                <input type="text" name="username" required placeholder="admin" style="width: 100%; font-size: 0.875rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.5rem 0.75rem; background: #f8fafc; outline: none; box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 0.25rem;">Passwort</label>
+                <input type="password" name="password" required placeholder="••••••••" style="width: 100%; font-size: 0.875rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.5rem 0.75rem; background: #f8fafc; outline: none; box-sizing: border-box;">
+            </div>
+            <button type="submit" style="width: 100%; padding: 0.625rem; background: #2563eb; color: #ffffff; font-weight: 600; border: none; border-radius: 0.5rem; cursor: pointer; transition: background 0.2s; font-size: 0.875rem; margin-top: 0.5rem;">
+                Einloggen
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
