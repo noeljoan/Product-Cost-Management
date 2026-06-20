@@ -115,3 +115,8 @@ product-cost-management/
 
 ## ⚠️ System-Hinweis (SAP-Schnittstellen)
 Im Gegensatz zur alten Access-Anwendung sind lokale Desktop-Automatisierungen wie **SAP GUI Scripting** oder **HTA-Hilfen** bewusst nicht Teil dieser Web-App. Diese Funktionen setzen zwingend eine lokale Windows-Installation mit einem installierten SAP-Desktop-Client voraus und wurden durch serverseitige Datenanalysen und Standard-Excel-Berichte ersetzt.
+
+## 📄 Lizenz & Autor
+
+- **Autor:** Noel Joan
+- **Lizenz:** MIT-Lizenz
